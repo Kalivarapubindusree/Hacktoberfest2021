@@ -1,0 +1,77 @@
+from itertools import combinations
+
+# Function to print support values in the desired format
+def print_lk(lk):
+for itemset_size, itemsets in enumerate(lk, start=1):
+for item, support_value in itemsets.items():
+itemset_label = f&quot;[&#39;I{item}&#39;]&quot;
+print(f&quot;{itemset_label}: {support_value}&quot;)
+print()
+
+# Given dataset and parameters
+DATASET = ((1, 2), (1, 3, 4), (2, 5, 7), (1, 2, 3), (2, 3, 5, 6))
+MIN_SUPPORT = 2
+MIN_CONFIDENCE = 50.0
+
+# Initialize the first candidate set (c1)
+c1 = dict()
+
+# Compute C1 (individual item counts)
+for itemset in DATASET:
+for i in itemset:
+c1[i] = c1.get(i, 0) + 1
+
+# Prune C1 to get the (remove items with support below the minimum)
+for item in list(c1):
+
+if c1[item] &lt; MIN_SUPPORT:
+del c1[item]
+
+# Initialize the list of frequent item sets (LK) with pruned C1
+LK = [c1]
+
+# Get the individual items from the pruned C1
+items = list(c1.keys())
+
+# Calculate frequent item sets using the Apriori algorithm
+for i in range(2, len(items)):
+s = dict()
+for combo in combinations(items, i): # Generate combinations of size i
+for itemset in DATASET:
+# Check if the current combination is a subset of the itemset
+if set(combo).issubset(itemset):
+s[combo] = s.get(combo, 0) + 1
+# Prune the generated combination if its support is below the minimum
+if s.get(combo) and s[combo] &lt; MIN_SUPPORT:
+del s[combo]
+# Break the loop if no more frequent item sets of size i are found
+if not s:
+break
+LK.append(s)
+
+# Print the support values of frequent item sets
+print(&quot;Frequent Item Sets:&quot;)
+print_lk(LK)
+
+# Generate association rules
+rules = dict()
+
+for combo in LK[-1]:
+for item in combo:
+c = list(combo)
+c.remove(item)
+len_c = len(c)
+c = c[0] if len_c == 1 else tuple(c)
+# Calculate rule confidences
+rule_1 = LK[-1][combo] / LK[0][item] * 100
+rule_2 = LK[-1][combo] / LK[len_c - 1][c] * 100
+# Add rules to the dictionary if they meet the minimum confidence
+if rule_1 &gt;= MIN_CONFIDENCE:
+rules[f&quot;{item}-&gt;{c}&quot;] = rule_1
+if rule_2 &gt;= MIN_CONFIDENCE:
+rules[f&quot;{c}-&gt;{item}&quot;] = rule_2
+
+# Print the generated association rules
+print(&quot;Generated Association Rules:&quot;)
+for rule, confidence in rules.items():
+print(f&quot;Rule: {rule} | Confidence: {confidence:.2f}%&quot;)
